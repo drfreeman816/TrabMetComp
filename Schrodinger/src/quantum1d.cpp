@@ -109,10 +109,15 @@ void quantum1d::update_CN(double dt) {
   }
 }
 
-void quantum1d::update_euler_FFT(void) {
+void quantum1d::update_euler_fourier(real dt) {
 
   size_t i;
-  real k;
+  real k, k_0, dk;
+  complex z;
+  real temp;
+
+  k_0 = -math::pi / _dx;
+  dk = 2 * math::pi / (_x.back() - _x.front());
 
   // FFTW3 arrays
   fftw_complex *psi, *phi;
@@ -127,16 +132,37 @@ void quantum1d::update_euler_FFT(void) {
   ft = fftw_plan_dft_1d(_N, psi, phi, FFTW_FORWARD, FFTW_MEASURE);
   ift = fftw_plan_dft_1d(_N, phi, psi, FFTW_BACKWARD, FFTW_MEASURE);
 
-  // Fill psi
+  // Half step in X
   for (i = 0; i < _N; i++)
-    psi[i] = _psi[i];
+    _psi[i] *= std::exp(complex(0.0, -dt * _V[i] / (2 * _hbar)));
 
-  // Execute FFTW plan
+  // Fill psi
+  for (i = 0; i < _N; i++) {
+    psi[i][0] = _psi[i].real();
+    psi[i][1] = _psi[i].imag();
+  }
+
+  // FFT
   fftw_execute(ft);
 
-  // Apply diagonal operator
+  // Step in K
+  for (size_t i = 0; i < _N; i++) {
+    k = k_0 + i * dk;
+    z = std::exp(complex(0.0, _hbar * k * k * dt / (2 * _m)));
+    temp = phi[i][0];
+    phi[i][0] = temp * z.real() - phi[i][1] * z.imag();
+    phi[i][1] = temp * z.imag() + phi[i][1] * z.real();
+  }
+
+  // iFFT
+  fftw_execute(ift);
+
+  // Half step in X
   for (i = 0; i < _N; i++) {
-    k = i - _N / 2;
+    z = std::exp(complex(0.0, -dt * _V[i] / (2 * _hbar)));
+    _psi[i] = complex(psi[i][0] * z.real() - psi[i][1] * z.imag(),
+                      psi[i][0] * z.imag() + psi[i][1] * z.real()) /
+              _N;
   }
 
   // Destroy FFTW plans

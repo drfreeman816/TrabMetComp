@@ -92,7 +92,7 @@ public:
 
   void update_CN(real);
 
-  void update_euler_FFT(void);
+  void update_euler_fourier(real);
 
   // Get norm
   real get_norm(void);

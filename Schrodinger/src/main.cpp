@@ -26,7 +26,8 @@ int main() {
   while (1) {
     std::cerr << "P = " << particle.get_norm() << '\n';
     particle.plot_prob();
-    particle.update_rk4(dt);
+    particle.update_euler_fourier(dt);
+    std::cin.get();
   }
 
   return 0;
