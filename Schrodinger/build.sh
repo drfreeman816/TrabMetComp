@@ -1,7 +1,6 @@
-#!/bin/sh
-#/usr/bin/env bash
+#!/bin/bash
 
-# My cpp lib make script
+# My cpp lib make scrip
 
 # Colors
 echo_black() { echo "$(tput setaf 0)$*$(tput setaf 7)"; }
@@ -15,24 +14,43 @@ echo_white() { echo "$(tput setaf 7)$*$(tput setaf 7)"; }
 echo_grey() { echo "$(tput setaf 8)$*$(tput setaf 7)"; }
 echo_red() { echo "$(tput setaf 9)$*$(tput setaf 7)"; }
 
+# Select parameters
+program="$1"
+options="$2"
+
 clear
 
-echo_green "Cleaning folder..."
-rm -Rf bin lib obj
-mkdir bin lib obj
+echo_green "Compiling $program with $options"
 
-# Compile library to object code
-echo_green "Compiling library to object file..."
-g++ ./src/MetComp.cpp -c -std=c++17 -I ./inc -o ./obj/MetComp.o
+printf '\n'
+echo_purple "Creating directories..."
+mkdir -p obj lib bin
 
-# Generate library file
-echo_green "Generating library archive file..."
-ar rcs ./lib/libMetComp.a ./obj/MetComp.o
+# Compile headers
+printf '\n'
+echo_purple "Precompiling headers to object files and creating library archive..."
+headers=./inc/*.h
+for header in $headers
+do
+ file=${header:6:-2}
+  printf '\n'
 
-# Use library in test program
-echo_green "Compiling main program to object file..."
-g++ main.cpp -std=c++17 -I ./inc -L ./lib -static -lMetComp -o ./bin/main
+  echo_cyan "$file"
+
+  time icpc -Wall -c $options ./src/$file.cpp -I ./inc -o ./obj/$file.o
+  ar rcs ./lib/libMetComp.a ./obj/$file.o
+done
+
+# Compile program and link
+printf '\n'
+echo_purple "Compiling $program and linking to library..."
+icpc -Wall $options -L ./lib -I ./inc ./src/$program.cpp ./lib/libMetComp.a -o ./bin/$program
 
 # Run test program
-echo_green "Running test program..."
-./bin/main
+printf '\n'
+echo_purple "Running $program..."
+printf '\n'
+#time ./bin/$program
+./bin/$program | gnuplot -p
+
+printf '\n'
