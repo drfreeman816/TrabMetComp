@@ -66,6 +66,87 @@ void quantum1d::update_rk4(real dt) {
   _t += dt;
 }
 
+// Crank-Nicolson method
+void quantum1d::update_CN(double dt) {
+
+  size_t i, n = _N - 2;
+
+  double k = dt / (2 * _dx * _dx);
+  complex beta(0, -k / 2);
+  std::vector<real> B(n);
+  std::vector<complex> alpha(n), chi(n), gamma(n), phi(n);
+
+  // Fill B
+  for (i = 0; i < n; i++) {
+    B[i] = k + dt * _V[i + 1] / 2;
+  }
+
+  // Fill alpha
+  for (i = 0; i < n; i++)
+    alpha[i] = complex(1.0, B[i]);
+
+  // Fill chi
+  for (i = 0; i < n; i++) {
+    chi[i] = alpha[i] * _psi[i + 1] - beta * (_psi[i] + _psi[i + 2]);
+  }
+
+  // Calculate gamma
+  gamma[0] = beta / alpha[0];
+  for (i = 1; i < n; i++)
+    gamma[i] = beta / (alpha[i] - beta * gamma[i - 1]);
+
+  // Calculate phi
+  phi[0] = (chi[0] - beta * _psi[0]) / alpha[0];
+  for (i = 1; i < n - 1; i++)
+    phi[i] = (chi[i] - beta * phi[i - 1]) / (alpha[i] - beta * gamma[i - 1]);
+  phi[n - 1] = (chi[n - 1] - beta * (_psi[_N - 1] + phi[n - 2])) /
+               (alpha[n - 1] - beta * gamma[n - 2]);
+
+  // Update psi
+  _psi[_N - 2] = phi[n];
+  for (i = _N - 3; i > 0; i--) {
+    _psi[i] = phi[i - 1] - gamma[i - 1] * _psi[i + 1];
+  }
+}
+
+void quantum1d::update_euler_FFT(void) {
+
+  size_t i;
+  real k;
+
+  // FFTW3 arrays
+  fftw_complex *psi, *phi;
+  // FFTW3 plans
+  fftw_plan ft, ift;
+
+  // Allocate arrays
+  psi = (fftw_complex *)fftw_malloc(sizeof(fftw_complex) * _N);
+  phi = (fftw_complex *)fftw_malloc(sizeof(fftw_complex) * _N);
+
+  // Specify FFTW plans
+  ft = fftw_plan_dft_1d(_N, psi, phi, FFTW_FORWARD, FFTW_MEASURE);
+  ift = fftw_plan_dft_1d(_N, phi, psi, FFTW_BACKWARD, FFTW_MEASURE);
+
+  // Fill psi
+  for (i = 0; i < _N; i++)
+    psi[i] = _psi[i];
+
+  // Execute FFTW plan
+  fftw_execute(ft);
+
+  // Apply diagonal operator
+  for (i = 0; i < _N; i++) {
+    k = i - _N / 2;
+  }
+
+  // Destroy FFTW plans
+  fftw_destroy_plan(ft);
+  fftw_destroy_plan(ift);
+  // Free memory allocated
+  fftw_free(psi);
+  fftw_free(phi);
+}
+
 // Get norm
 real quantum1d::get_norm(void) {
   real S = 0;

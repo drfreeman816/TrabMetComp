@@ -51,6 +51,6 @@ printf '\n'
 echo_purple "Running $program..."
 printf '\n'
 #time ./bin/$program
-./bin/$program | gnuplot -p
+#./bin/$program | gnuplot -p
 
 printf '\n'

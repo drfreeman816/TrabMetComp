@@ -1,7 +1,7 @@
 #include "MetComp.h"
 #include "quantum1d.h"
 
-// Normal distribution
+// Normal distribution1
 real normal(real);
 // Initial wavefunction
 complex psi_0(real);
@@ -11,7 +11,7 @@ real V(real);
 int main() {
   real a = -10, b = 10;
   size_t N = 1001;
-  real dt = 0.00001;
+  real dt = 1e-5;
 
   // Create myparticle
   quantum1d particle(a, b, N, psi_0);

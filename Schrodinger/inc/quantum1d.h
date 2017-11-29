@@ -3,6 +3,7 @@
 #include "MetComp.h"
 //#include "complex.h"
 #include <complex>
+#include <fftw3.h>
 
 typedef std::complex<real> complex;
 
@@ -87,7 +88,11 @@ public:
 
   void update_rk4(real);
 
-  void update_thomas(real);
+  void update_btcs(real);
+
+  void update_CN(real);
+
+  void update_euler_FFT(void);
 
   // Get norm
   real get_norm(void);
