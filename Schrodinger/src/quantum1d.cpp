@@ -109,7 +109,72 @@ void quantum1d::update_CN(double dt) {
   }
 }
 
-void quantum1d::update_euler_fourier(real dt) {
+void quantum1d::update_CN_periodic(real dt) {
+
+  size_t i;
+  complex a(0, -0.25 * dt / (_dx * _dx));
+  std::vector<complex> B(_N), u_aux(_N), c_new(_N), d_new(_N), psi_next(_N);
+
+  // Fill B
+  for (i = 0; i < _N; i++)
+    B[i] = complex(1.0, 0.5 * dt * (1.0 / (_dx * _dx) + _V[i]));
+
+  u_aux[0] = conj(a) * (_psi[_N - 1] + _psi[1]) + conj(B[0]) * _psi[0];
+  for (i = 1; i < _N - 1; i++)
+    u_aux[i] = conj(a) * (_psi[i - 1] + _psi[i + 1]) + conj(B[i]) * _psi[i];
+  u_aux[_N - 1] =
+      conj(a) * (_psi[_N - 2] + _psi[0]) + conj(B[_N - 1]) * _psi[_N - 1];
+
+  c_new[0] = a / B[0];
+  for (i = 1; i < _N; i++)
+    c_new[i] = a / (B[i] - c_new[i - 1] * a);
+
+  d_new[0] = u_aux[0] / B[0];
+  for (i = 1; i < _N; i++)
+    d_new[i] = (u_aux[i] - d_new[i - 1] * a) / (B[i] - c_new[i - 1] * a);
+
+  psi_next[_N - 1] = d_new[_N - 1];
+  for (i = _N - 2; i > -1; i--) {
+    std::cerr << i << '\n';
+    psi_next[i] = d_new[i] - c_new[i] * psi_next[i + 1];
+  }
+
+  for (i = 0; i < _N; i++)
+    _psi[i] = psi_next[i];
+}
+
+void quantum1d::update_CN_bounded(real dt) {
+
+  size_t i;
+  complex a(0, -0.25 * dt / (_dx * _dx));
+  std::vector<complex> B(_N), u_aux(_N), c_new(_N), d_new(_N), psi_next(_N);
+
+  // Fill B
+  for (i = 0; i < _N; i++)
+    B[i] = complex(1.0, 0.5 * dt * (1.0 / (_dx * _dx) + _V[i]));
+
+  for (i = 1; i < _N - 1; i++)
+    u_aux[i] = conj(a) * (_psi[(i - 1 + _N) % _N] + _psi[(i + 1 + _N) % _N]) +
+               conj(B[i]) * _psi[i];
+
+  c_new[1] = a / B[1];
+  for (i = 2; i < _N - 1; i++)
+    c_new[i] = a / (B[i] - c_new[i - 1] * a);
+
+  d_new[1] = u_aux[1] / B[1];
+  for (i = 2; i < _N - 1; i++)
+    d_new[i] = (u_aux[i] - d_new[i - 1] * a) / (B[i] - c_new[i - 1] * a);
+
+  psi_next[0] = psi_next[_N - 1] = 0;
+  psi_next[_N - 2] = d_new[_N - 2];
+  for (i = _N - 3; i >= 1; i--)
+    psi_next[i] = d_new[i] - c_new[i] * psi_next[i + 1];
+
+  for (i = 0; i < _N; i++)
+    _psi[i] = psi_next[i];
+}
+
+void quantum1d::update_fourier(real dt) {
 
   size_t i;
   real k, k_0, dk;
@@ -133,7 +198,7 @@ void quantum1d::update_euler_fourier(real dt) {
   ift = fftw_plan_dft_1d(_N, phi, psi, FFTW_BACKWARD, FFTW_MEASURE);
 
   // Half step in X
-  for (i = 0; i < _N; i++)
+  for (i = 1; i < _N - 1; i++)
     _psi[i] *= std::exp(complex(0.0, -dt * _V[i] / (2 * _hbar)));
 
   // Fill psi
@@ -221,10 +286,28 @@ void quantum1d::plot_prob(void) {
             << std::endl;
 
   // Call interactive terminal
-  std::cout << "plot \"-\" w p pt 7 ps 0.5" << std::endl;
+  // std::cout << "plot \"-\" w p pt 7 ps 0.5" << std::endl;
+  std::cout << "plot \"-\" w l" << std::endl;
 
   for (size_t i = 0; i < _N; i++)
     std::cout << _x[i] << "\t" << std::norm(_psi[i]) << '\n';
+  std::cout << 'e' << std::endl;
+}
+
+// Plot gif
+void quantum1d::plot_gif(void) {
+  // Setup GNUPLOT
+  std::cout << "set key off" << std::endl;
+  std::cout << "set xrange [" << _x.front() << ':' << _x.back() << ']'
+            << std::endl;
+
+  // Call interactive terminal
+  // std::cout << "plot \"-\" w p pt 7 ps 0.5" << std::endl;
+  std::cout << "plot \"-\" w l" << std::endl;
+
+  for (size_t i = 0; i < _N; i++)
+    std::cout << _x[i] << "\t" << _psi[i].real() << "\t" << _psi[i].imag()
+              << '\n';
   std::cout << 'e' << std::endl;
 }
 

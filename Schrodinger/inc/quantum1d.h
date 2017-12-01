@@ -18,7 +18,7 @@ class quantum1d {
   std::vector<real> _V;      // Potential
   std::vector<complex> _psi; // Amplitude
 
-  std::function<complex(real real)> _psi_th;
+  std::function<complex(real, real)> _psi_th;
 
   // static const real _hbar = 6.62607004081e-34;
   // static const real _m = 9.1093835611e-31;
@@ -83,6 +83,11 @@ public:
       _V[i] = V(_x[i]);
   }
 
+  // Set analytical function
+  void set_analytical(complex (*psi)(real, real)) {
+    _psi_th = [psi](real t, real x) { return psi(t, x); };
+  }
+
   // Update
   void update_euler(real);
 
@@ -92,7 +97,11 @@ public:
 
   void update_CN(real);
 
-  void update_euler_fourier(real);
+  void update_CN_periodic(real);
+
+  void update_CN_bounded(real);
+
+  void update_fourier(real);
 
   // Get norm
   real get_norm(void);
@@ -105,6 +114,9 @@ public:
 
   // Plot probability
   void plot_prob(void);
+
+  // Plot gif
+  void plot_gif(void);
 
   // Debug function
   void debug(void);

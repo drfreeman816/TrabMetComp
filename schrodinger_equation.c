@@ -1,6 +1,6 @@
 #include <stdio.h>
 #include <math.h>
-#include <complex.h> 
+#include <complex.h>
 
 #define N_steps 100000
 #define L 1000
@@ -10,9 +10,9 @@
 
 double V(int x_rel)
 {
-	return - pow(w,2) * pow(x_rel - 500,2) / 2.0; //SHO
+	//return - pow(w,2) * pow(x_rel - 500,2) / 2.0; //SHO
 
-	//return 0; 
+	return 0;
 }
 
 double complex b(int i)
@@ -50,11 +50,11 @@ void CN(double complex *u, double complex *u_aux, double complex *u_next, double
 	if (bi == 1) u_next[0] = u_next[L] = 0;
 	u_next[L-bi] = d_new[L-bi];
 	for(i = L-1-bi; i >= bi; i --) u_next[i] = d_new[i] - c_new[i] * u_next[i+1];
-	
+
 	//u = u_next
 
 	for(i = 0; i <= L; i++) u[i] = u_next[i];
-} 
+}
 
 int main(void)
 {
@@ -68,14 +68,14 @@ int main(void)
 	while(n < N_steps)
 	{
 		CN(u, u_aux, u_next, a, 0);
-		printf("set title 'Time = %d'\nplot \'-' w lp pt 7 ps 0.1", n);
+		printf("set title 'Time = %d'\nplot \'-' w lp pt 7 ps 0.1\n", n);
 		for(i = 0; i <= L; i ++) printf("%d\t%.10lf\n",i,pow(creal(u[i]),2) + pow(cimag(u[i]),2));
 		//for(i = 0; i <= L; i ++) printf("%d\t%lf\n",i,cimag(u[i]));
 		//for(i = 0; i <= L; i ++) printf("%d\t%lf\n",i,creal(u[i]));
-		printf("e\npause 0.1\n"); 
+		printf("e\n");
 		n ++;
 	}
 
 	return 0;
-	
-}	
+
+}
